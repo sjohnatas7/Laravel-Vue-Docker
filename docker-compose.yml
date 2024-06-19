@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: backend
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - 9680:80
+    networks:
+      - travellist
+    depends_on:
+      - mysql
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VUE_APP_BACKEND_URL=http://localhost:9680/api
+    image: vue-app
+    container_name: vue-app
+    restart: unless-stopped
+    ports:
+      - 3000:8080
+    networks:
+      - travellist
+    environment:
+      - VUE_APP_BACKEND_URL=http://localhost:9680/api
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: root
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - travellist
+
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: 
+    ports:
+      - 8080:80
+    networks:
+      - travellist
+
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  travellist:
+    driver: bridge
